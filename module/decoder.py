@@ -72,6 +72,7 @@ class Decoder(nn.Module):
             resblock_dilation_rates=[[1, 3, 5], [1, 3, 5], [1, 3, 5]]
             ):
         super().__init__()
+        self.num_kernels = len(resblock_kernel_sizes)
         self.pre = weight_norm(nn.Conv1d(input_channels, upsample_initial_channels, 7, 1, 3))
 
         self.ups = nn.ModuleList([])
@@ -96,7 +97,7 @@ class Decoder(nn.Module):
         for up, MRF in zip(self.ups, self.MRFs):
             x = F.leaky_relu(x, LRELU_SLOPE)
             x = up(x)
-            x = MRF(x) / len(self.ups)
+            x = MRF(x) / self.num_kernels
         x = F.leaky_relu(x)
         x = self.post(x)
         x = torch.tanh(x)

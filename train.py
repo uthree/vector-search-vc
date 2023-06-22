@@ -64,8 +64,8 @@ dl = torch.utils.data.DataLoader(ds, batch_size=args.batch_size, shuffle=True)
 
 scaler = torch.cuda.amp.GradScaler(enabled=args.fp16)
 
-OptC = optim.Adam(vc.parameters(), lr=args.learning_rate, betas=(0.9, 0.5))
-OptD = optim.Adam(D.parameters(), lr=args.learning_rate, betas=(0.9, 0.5))
+OptC = optim.AdamW(vc.parameters(), lr=args.learning_rate, betas=(0.8, 0.99))
+OptD = optim.AdamW(D.parameters(), lr=args.learning_rate, betas=(0.8, 0.99))
 
 hubert = load_hubert(device)
 
@@ -132,7 +132,7 @@ for epoch in range(args.epoch):
         N = wave.shape[0]
         bar.update(N)
 
-        if batch % 500 == 0:
+        if batch % 200 == 0:
             save_models(vc, D)
 
 print("Training Complete!")
