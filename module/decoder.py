@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 
 LRELU_SLOPE = 0.1
 
@@ -23,11 +24,11 @@ class ResBlock(nn.Module):
 
         for d in dilation:
             self.convs1.append(
-                    nn.Conv1d(channels, channels, kernel_size, 1, dilation=d,
-                        padding=get_padding(kernel_size, d)))
+                    weight_norm(nn.Conv1d(channels, channels, kernel_size, 1, dilation=d,
+                        padding=get_padding(kernel_size, d))))
             self.convs2.append(
-                    nn.Conv1d(channels, channels, kernel_size, 1, dilation=d,
-                        padding=get_padding(kernel_size, d)))
+                    weight_norm(nn.Conv1d(channels, channels, kernel_size, 1, dilation=d,
+                        padding=get_padding(kernel_size, d))))
 
         self.convs1.apply(init_weights)
         self.convs2.apply(init_weights)
@@ -71,22 +72,23 @@ class Decoder(nn.Module):
             resblock_dilation_rates=[[1, 3, 5], [1, 3, 5], [1, 3, 5]]
             ):
         super().__init__()
-        self.pre = nn.Conv1d(input_channels, upsample_initial_channels, 7, 1, 3)
+        self.pre = weight_norm(nn.Conv1d(input_channels, upsample_initial_channels, 7, 1, 3))
 
         self.ups = nn.ModuleList([])
         for i, (s, k) in enumerate(zip(deconv_strides, deconv_kernel_sizes)):
             self.ups.append(
-                    nn.ConvTranspose1d(
-                        upsample_initial_channels//(2**i),
-                        upsample_initial_channels//(2**(i+1)),
-                        k, s, (k-s)//2))
+                    weight_norm(
+                        nn.ConvTranspose1d(
+                            upsample_initial_channels//(2**i),
+                            upsample_initial_channels//(2**(i+1)),
+                            k, s, (k-s)//2)))
 
         self.MRFs = nn.ModuleList([])
         for i in range(len(self.ups)):
             c = upsample_initial_channels//(2**(i+1))
             self.MRFs.append(MRF(c, resblock_kernel_sizes, resblock_dilation_rates))
-
-        self.post = nn.Conv1d(c, 1, 7, 1, 3, bias=False)
+        
+        self.post = weight_norm(nn.Conv1d(c, 1, 7, 1, 3, bias=False))
         self.ups.apply(init_weights)
     
     def forward(self, x):
@@ -94,8 +96,8 @@ class Decoder(nn.Module):
         for up, MRF in zip(self.ups, self.MRFs):
             x = F.leaky_relu(x, LRELU_SLOPE)
             x = up(x)
-            x = MRF(x)
-        x = F.leaky_relu(x, LRELU_SLOPE)
+            x = MRF(x) / len(self.ups)
+        x = F.leaky_relu(x)
         x = self.post(x)
         x = torch.tanh(x)
         x = x.squeeze(1)
