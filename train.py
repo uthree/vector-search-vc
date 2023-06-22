@@ -132,7 +132,7 @@ for epoch in range(args.epoch):
         N = wave.shape[0]
         bar.update(N)
 
-        if batch % 100 == 0:
+        if batch % 500 == 0:
             save_models(vc, D)
 
 print("Training Complete!")
