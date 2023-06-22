@@ -230,7 +230,7 @@ class Discriminator(nn.Module):
 
 
 class MelSpectrogramLoss(nn.Module):
-    def __init__(self, sample_rate=22050, n_ffts=[512, 1024, 2048], n_mels=80, normalized=False):
+    def __init__(self, sample_rate=16000, n_ffts=[512, 1024, 2048], n_mels=80, normalized=False):
         super().__init__()
         self.to_mels = nn.ModuleList([])
         for n_fft in n_ffts:
