@@ -41,9 +41,9 @@ for i, fname in enumerate(os.listdir(args.input)):
         wf, sr = torchaudio.load(os.path.join(args.input, fname))
         wf = resample(wf, sr, 16000)
         wf = wf.to(device)
-        
+
         wf = convertor.convert(wf, spk, f0_rate=args.f0_rate, k=4)
-        
+
         wf = resample(wf, 16000, sr)
         wf = wf.to(torch.device('cpu'))
         out_path = os.path.join(args.output, f"output_{fname}_{i}.wav")
