@@ -17,6 +17,7 @@ parser.add_argument('-o', '--output', default='./outputs',
                     help="Output directory")
 parser.add_argument('-t', '--target', default='./target.wav')
 parser.add_argument('-f0', '--f0-rate', default=1.0, type=float)
+parser.add_argument('-amp', default=1.0, type=float)
 
 
 args = parser.parse_args()
@@ -42,7 +43,7 @@ for i, fname in enumerate(os.listdir(args.input)):
         wf = resample(wf, sr, 16000)
         wf = wf.to(device)
 
-        wf = convertor.convert(wf, spk, f0_rate=args.f0_rate, k=4)
+        wf = convertor.convert(wf, spk, f0_rate=args.f0_rate, k=4) * args.amp
 
         wf = resample(wf, 16000, sr)
         wf = wf.to(torch.device('cpu'))

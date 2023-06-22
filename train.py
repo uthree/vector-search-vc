@@ -64,8 +64,8 @@ dl = torch.utils.data.DataLoader(ds, batch_size=args.batch_size, shuffle=True)
 
 scaler = torch.cuda.amp.GradScaler(enabled=args.fp16)
 
-OptC = optim.Adam(vc.parameters(), lr=args.learning_rate)
-OptD = optim.Adam(D.parameters(), lr=args.learning_rate)
+OptC = optim.Adam(vc.parameters(), lr=args.learning_rate, betas=(0.9, 0.5))
+OptD = optim.Adam(D.parameters(), lr=args.learning_rate, betas=(0.9, 0.5))
 
 hubert = load_hubert(device)
 

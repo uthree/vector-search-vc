@@ -9,7 +9,7 @@ def compute_f0(wf, sample_rate=16000, segment_size=256, f0_min=20, f0_max=1100):
         device = wf.device
         signal = wf.detach().cpu().numpy()
         signal = signal.astype(np.double)
-        _f0, t = pw.dio(signal, sample_rate, f0_floor=f0_min, f0_ceil=f0_max,)
+        _f0, t = pw.dio(signal, sample_rate, f0_floor=f0_min, f0_ceil=f0_max)
         f0 = pw.stonemask(signal, _f0, t, sample_rate)
         f0 = torch.from_numpy(f0).to(torch.float)
         f0 = f0.to(device)
