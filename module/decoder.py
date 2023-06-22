@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
+from torch.nn.utils import weight_norm, remove_weight_norm
 
 LRELU_SLOPE = 0.1
 
@@ -42,6 +42,11 @@ class ResBlock(nn.Module):
             x = xt + x
         return x
 
+    def remove_weight_norm(self):
+        for c1, c2 in zip(self.convs1, self.convs2):
+            remove_weight_norm(c1)
+            remove_weight_norm(c2)
+
 
 class MRF(nn.Module):
     def __init__(self,
@@ -59,6 +64,10 @@ class MRF(nn.Module):
             xt = block(x)
             x = xt + x
         return x
+
+    def remove_weight_norm(self):
+        for block in self.blocks:
+            remove_weight_norm(block)
 
 
 class Decoder(nn.Module):
@@ -103,3 +112,12 @@ class Decoder(nn.Module):
         x = torch.tanh(x)
         x = x.squeeze(1)
         return x
+
+
+    def remove_weight_norm(self):
+        remove_weight_norm(self.pre)
+        remove_weight_norm(self.post)
+        for up in self.ups:
+            remove_weight_norm(up)
+        for MRF in self.MRFs:
+            remove_weight_norm(MRF)
