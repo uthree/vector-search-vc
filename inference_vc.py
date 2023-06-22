@@ -5,9 +5,7 @@ import torch
 import torchaudio
 from torchaudio.functional import resample as resample
 
-from model import VoiceConvertor
-from module.f0 import compute_f0
-from module.hubert import load_hubert, interpolate_hubert_output
+from model import VoiceConvertorWrapper
 
 parser = argparse.ArgumentParser(description="Inference")
 
@@ -17,18 +15,24 @@ parser.add_argument('-i', '--input', default='./inputs',
                     help="Input directory")
 parser.add_argument('-o', '--output', default='./outputs',
                     help="Output directory")
+parser.add_argument('-t', '--target', default='./target.wav')
 parser.add_argument('-f0', '--f0-rate', default=1.0, type=float)
+
+
 args = parser.parse_args()
 
 device = torch.device(args.device)
 
-vc = VoiceConvertor().to(device)
-vc.load_state_dict(torch.load('./model.pt', map_location=device))
-
-hubert = load_hubert(device)
+convertor = VoiceConvertorWrapper('model.pt', device=device)
 
 if not os.path.exists(args.output):
     os.mkdir(args.output)
+
+print("Encoding target speaker...")
+wf, sr = torchaudio.load(args.target)
+wf = resample(wf, sr, 16000)
+wf = wf.to(device)
+spk = convertor.get_speaker_index(wf)
 
 
 for i, fname in enumerate(os.listdir(args.input)):
@@ -38,11 +42,8 @@ for i, fname in enumerate(os.listdir(args.input)):
         wf = resample(wf, sr, 16000)
         wf = wf.to(device)
         
-        f0 = compute_f0(wf).unsqueeze(1) * args.f0_rate
-        hubert_feature = interpolate_hubert_output(hubert(wf), wf.shape[1])
-        z = vc.encoder.encode(hubert_feature, f0)
-        wf = vc.decoder(z)
-
+        wf = convertor.convert(wf, spk, f0_rate=args.f0_rate, k=4)
+        
         wf = resample(wf, 16000, sr)
         wf = wf.to(torch.device('cpu'))
         out_path = os.path.join(args.output, f"output_{fname}_{i}.wav")

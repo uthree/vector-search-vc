@@ -87,7 +87,8 @@ for epoch in range(args.epoch):
         # Train Convertor.
         with torch.cuda.amp.autocast(enabled=args.fp16):
             hubert_feature = interpolate_hubert_output(hubert(wave), wave.shape[1])
-            f0 = compute_f0(wave).squeeze(1)
+            f0 = compute_f0(wave)
+            f0 = f0.unsqueeze(1)
             mean, logvar = vc.encoder(hubert_feature, f0)
             z = mean + torch.randn_like(logvar) * torch.exp(logvar)
             wave_out = vc.decoder(z)
