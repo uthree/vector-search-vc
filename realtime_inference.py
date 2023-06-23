@@ -16,8 +16,8 @@ parser.add_argument('-d', '--device', default='cpu', choices=['cpu', 'cuda', 'mp
                     help="Device setting. Set this option to cuda if you need to use ROCm.")
 parser.add_argument('-t', '--target', default='./target.wav',
                     help="Target voice")
-parser.add_argument('-c', '--chunk', default=2048, type=int)
-parser.add_argument('-b', '--buffer', default=12, type=int)
+parser.add_argument('-c', '--chunk', default=3072, type=int)
+parser.add_argument('-b', '--buffer', default=6, type=int)
 parser.add_argument('-fp16', default=False, type=bool)
 parser.add_argument('-ic', '--inputchannels', default=1, type=int)
 parser.add_argument('-oc', '--outputchannels', default=1, type=int)
@@ -82,7 +82,7 @@ while True:
     with torch.no_grad():
         with torch.cuda.amp.autocast(enabled=args.fp16):
             wf = resample(data, 44100, 16000)
-            wf = vc.convert(wf, spk, f0_rate=args.f0_rate, alpha=0)
+            wf = vc.convert(wf, spk, f0_rate=args.f0_rate)
             data = resample(wf, 16000, 44100)
             data = data.squeeze(0)
     data = data.cpu().numpy()

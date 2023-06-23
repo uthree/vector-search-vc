@@ -5,6 +5,7 @@ from transformers import HubertModel
 def load_hubert(device=torch.device('cpu')):
     print("Loading HuBERT...")
     model = HubertModel.from_pretrained("rinna/japanese-hubert-base").to(device)
+    model.eval()
     for param in model.parameters():
         param.requires_grad = False
     return model

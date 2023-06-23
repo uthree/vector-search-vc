@@ -44,7 +44,7 @@ class VoiceConvertorWrapper():
             index.add(features)
         return Speaker(index, features)
 
-    def convert_features(self, features, speaker, k=4, alpha=0.1):
+    def convert_features(self, features, speaker, k=4, alpha=0.2):
         features_in = features
         features = features[0]
         # [768, length]
@@ -58,7 +58,7 @@ class VoiceConvertorWrapper():
         features_in * alpha + features * (1 - alpha)
         return features
 
-    def convert(self, wave, speaker, f0_rate=1.0, k=4, alpha=0.1):
+    def convert(self, wave, speaker, f0_rate=1.0, k=4, alpha=0.2):
         index = speaker.index
         with torch.no_grad():
             if wave.ndim == 2:
@@ -68,4 +68,5 @@ class VoiceConvertorWrapper():
             f0 = compute_f0(wave[0]).unsqueeze(0) * f0_rate
             hubert_features = self.convert_features(hubert_features, speaker, k, alpha)
             z = self.convertor.encoder.encode(hubert_features, f0)
-            return self.convertor.decoder(z)
+            wave = self.convertor.decoder(z)
+            return wave
