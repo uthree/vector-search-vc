@@ -14,5 +14,5 @@ def load_hubert(device=torch.device('cpu')):
 def interpolate_hubert_output(hubert_output, wave_length):
     c = hubert_output.last_hidden_state
     c = c.transpose(1, 2)
-    c = F.interpolate(c, size=(wave_length // 256))
+    c = F.interpolate(c, size=(wave_length // 256), mode='linear')
     return c
