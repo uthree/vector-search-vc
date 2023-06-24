@@ -5,7 +5,9 @@ import torch
 import torchaudio
 from torchaudio.functional import resample as resample
 
-from model import VoiceConvertorWrapper
+from module.hubert import load_hubert, interpolate_hubert_output
+from module.f0 import compute_f0
+from model import VoiceConvertor, match_features
 
 parser = argparse.ArgumentParser(description="Inference")
 
@@ -24,7 +26,10 @@ args = parser.parse_args()
 
 device = torch.device(args.device)
 
-convertor = VoiceConvertorWrapper('model.pt', device=device)
+vc = VoiceConvertor().to(device)
+vc.load_state_dict(torch.load('./model.pt', map_location=device))
+
+hubert = load_hubert(device)
 
 if not os.path.exists(args.output):
     os.mkdir(args.output)
@@ -33,7 +38,7 @@ print("Encoding target speaker...")
 wf, sr = torchaudio.load(args.target)
 wf = resample(wf, sr, 16000)
 wf = wf.to(device)
-spk = convertor.get_speaker_index(wf)
+spk = interpolate_hubert_output(hubert(wf), wf.shape[1])
 
 
 for i, fname in enumerate(os.listdir(args.input)):
@@ -42,8 +47,12 @@ for i, fname in enumerate(os.listdir(args.input)):
         wf, sr = torchaudio.load(os.path.join(args.input, fname))
         wf = resample(wf, sr, 16000)
         wf = wf.to(device)
-
-        wf = convertor.convert(wf, spk, f0_rate=args.f0_rate, k=4) * args.amp
+        
+        feats = interpolate_hubert_output(hubert(wf), wf.shape[1])
+        feats = match_features(feats, spk)
+        f0 = compute_f0(wf) * args.f0_rate
+        z = vc.encoder.encode(feats, f0)
+        wf = vc.decoder(z)
 
         wf = resample(wf, 16000, sr)
         wf = wf.to(torch.device('cpu'))

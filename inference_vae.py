@@ -38,7 +38,7 @@ for i, fname in enumerate(os.listdir(args.input)):
         wf = resample(wf, sr, 16000)
         wf = wf.to(device)
         
-        f0 = compute_f0(wf).unsqueeze(1) * args.f0_rate
+        f0 = compute_f0(wf) * args.f0_rate
         hubert_feature = interpolate_hubert_output(hubert(wf), wf.shape[1])
         z = vc.encoder.encode(hubert_feature, f0)
         wf = vc.decoder(z)
