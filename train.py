@@ -9,10 +9,11 @@ import torchaudio
 
 from tqdm import tqdm
 
-from model import VoiceConvertor, match_features
+from model import VoiceConvertor
+from module.match_features import match_features
 from module.dataset import WaveFileDirectory
 from module.discriminator import Discriminator, MelSpectrogramLoss
-from module.hubert import load_hubert, interpolate_hubert_output
+from module.hubert import load_hubert, extract_hubert_feature
 from module.f0 import compute_f0
 
 parser = argparse.ArgumentParser(description="run training")
@@ -22,7 +23,7 @@ parser.add_argument('-d', '--device', default='cpu')
 parser.add_argument('-e', '--epoch', default=1000, type=int)
 parser.add_argument('-b', '--batch-size', default=1, type=int)
 parser.add_argument('-lr', '--learning-rate', default=1e-4, type=float)
-parser.add_argument('-len', '--length', default=65536, type=int)
+parser.add_argument('-len', '--length', default=81920, type=int)
 parser.add_argument('-m', '--max-data', default=-1, type=int)
 parser.add_argument('-fp16', default=False, type=bool)
 parser.add_argument('-gacc', '--gradient-accumulation', default=1, type=int)
@@ -72,7 +73,6 @@ grad_acc = args.gradient_accumulation
 
 mel_loss = MelSpectrogramLoss().to(device)
 
-weight_kl = 0.02
 weight_fm = 2.0
 weight_mel = 45.0
 
@@ -89,26 +89,23 @@ for epoch in range(args.epoch):
         # Train Convertor.
         with torch.cuda.amp.autocast(enabled=args.fp16):
             f0 = compute_f0(wave_src)
-            f0 = f0
 
-            src_feature = interpolate_hubert_output(hubert(wave_src), wave_src.shape[1])
-            ref_feature = interpolate_hubert_output(hubert(wave_ref), wave_ref.shape[1])
+            src_feature = extract_hubert_feature(hubert, wave_src)
+            ref_feature = extract_hubert_feature(hubert, wave_ref)
 
             feature = match_features(src_feature, ref_feature)
 
-            mean, logvar = vc.encoder(feature, f0)
-            z = mean + torch.randn_like(logvar) * torch.exp(logvar)
+            z = vc.encoder(feature, f0)
             wave_out = vc.decoder(z)
             loss_adv = 0
             logits = D.logits(wave_out)
             for logit in logits:
                 loss_adv += (logit ** 2).mean()
 
-            loss_kl = (-1 - logvar + torch.exp(logvar) + mean ** 2).mean()
             loss_fm = D.feat_loss(wave_out, wave_src)
             loss_mel = mel_loss(wave_out, wave_src)
 
-            loss_c = loss_adv + weight_kl * loss_kl + weight_fm * loss_fm + weight_mel * loss_mel
+            loss_c = loss_adv + weight_fm * loss_fm + weight_mel * loss_mel
 
         scaler.scale(loss_c).backward()
 
@@ -132,7 +129,7 @@ for epoch in range(args.epoch):
 
         scaler.update()
         
-        tqdm.write(f"D: {loss_d.item():.4f}, Adv.: {loss_adv.item():.4f}, F.M.: {loss_fm.item():.4f}, Mel.: {loss_mel.item():.4f}, K.L.: {loss_kl.item():.4f}")
+        tqdm.write(f"D: {loss_d.item():.4f}, Adv.: {loss_adv.item():.4f}, F.M.: {loss_fm.item():.4f}, Mel.: {loss_mel.item():.4f}")
 
         N = wave.shape[0]
         bar.update(N)

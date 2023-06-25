@@ -72,11 +72,11 @@ class MRF(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self,
-            input_channels=192,
+            input_channels=512,
             upsample_initial_channels=512,
             speaker_encoding_channels=128,
-            deconv_strides=[8, 8, 2, 2],
-            deconv_kernel_sizes=[16, 16, 4, 4],
+            deconv_strides=[10, 8, 2, 2],
+            deconv_kernel_sizes=[20, 16, 4, 4],
             resblock_kernel_sizes=[3, 7, 11],
             resblock_dilation_rates=[[1, 3, 5], [1, 3, 5], [1, 3, 5]]
             ):

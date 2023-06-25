@@ -126,7 +126,7 @@ class ScaleDiscriminator(nn.Module):
             pool = 1
             ):
         super().__init__()
-        self.pool = torch.nn.AvgPool1d(pool)
+        self.pool = torch.nn.AvgPool1d(pool*2, pool)
         self.segment_size = segment_size
         if norm_type == 'weight':
             norm_f = nn.utils.weight_norm

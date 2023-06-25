@@ -4,7 +4,7 @@ import numpy as np
 import pyworld as pw
 
 
-def compute_f0(wf, sample_rate=16000, segment_size=256, f0_min=20, f0_max=1100):
+def compute_f0(wf, sample_rate=16000, segment_size=320, f0_min=20, f0_max=1100):
     if wf.ndim == 1:
         device = wf.device
         signal = wf.detach().cpu().numpy()

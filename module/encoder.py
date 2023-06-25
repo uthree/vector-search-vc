@@ -1,24 +1,27 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class Encoder(nn.Module):
-    def __init__(self, hubert_dim=768, embedding_dim=192):
+    def __init__(self, hubert_dim=768, hifigan_dim=512):
         super().__init__()
-        self.feat_enc = nn.Conv1d(hubert_dim, embedding_dim, 1)
-        self.f0_enc = nn.Conv1d(1, embedding_dim, 1)
-        self.decode_conv = nn.Sequential(
-                nn.Conv1d(embedding_dim, embedding_dim * 4, 1),
-                nn.ReLU(),
-                nn.Conv1d(embedding_dim * 4, embedding_dim * 2, 1))
-        
+        self.proj = nn.Conv1d(hubert_dim, hifigan_dim, 1, 1, 0, bias=False)
+        self.f0_enc = F0Encoder(hifigan_dim)
 
     def forward(self, hubert_feature, f0):
-        x = self.feat_enc(hubert_feature) + torch.sin(self.f0_enc(f0))
-        mu, sigma = torch.chunk(self.decode_conv(x), 2, dim=1)
-        return mu, sigma
+        return self.proj(hubert_feature) + self.f0_enc(f0)
 
-    def encode(self, hubert_feature, f0):
-        mu, sigma = self.forward(hubert_feature, f0)
-        return mu
 
+class F0Encoder(nn.Module):
+    def __init__(self, hifigan_dim=512):
+        super().__init__()
+        self.c1 = nn.Conv1d(1, hifigan_dim, 1, 1, 0)
+        self.c2 = nn.Conv1d(hifigan_dim, hifigan_dim, 1, 1, 0)
+        self.c1.weight.data.normal_(0, 0.01)
+
+    def forward(self, x):
+        x = self.c1(x)
+        x = torch.sin(x)
+        x = self.c2(x)
+        return x

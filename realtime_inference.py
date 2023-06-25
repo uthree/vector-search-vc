@@ -9,7 +9,7 @@ import numpy as np
 import pyaudio
 
 from model import VoiceConvertor, match_features
-from module.hubert import load_hubert, interpolate_hubert_output
+from module.hubert import load_hubert
 from module.f0 import compute_f0
 
 parser = argparse.ArgumentParser(description="Inference")
@@ -42,7 +42,7 @@ hubert = load_hubert(device)
 wf, sr = torchaudio.load(args.target)
 wf = wf.to(device)
 wf = resample(wf, sr, 16000)
-spk = interpolate_hubert_output(hubert(wf), wf.shape[1])
+# encode speaker
 
 audio = pyaudio.PyAudio()
 stream_input = audio.open(
@@ -85,12 +85,8 @@ while True:
     with torch.no_grad():
         with torch.cuda.amp.autocast(enabled=args.fp16):
             wf = resample(data, 44100, 16000)
-            
-            feats = interpolate_hubert_output(hubert(wf), wf.shape[1])
-            feats = match_features(feats, spk)
-            f0 = compute_f0(wf) * args.f0_rate
-            z = vc.encoder.encode(feats, f0)
-            wf = vc.decoder(z)
+
+            # Convert
 
             data = resample(wf, 16000, 44100)
             data = data.squeeze(0)

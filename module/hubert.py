@@ -11,8 +11,9 @@ def load_hubert(device=torch.device('cpu')):
     return model
 
 
-def interpolate_hubert_output(hubert_output, wave_length):
-    c = hubert_output.last_hidden_state
-    c = c.transpose(1, 2)
-    c = F.interpolate(c, size=(wave_length // 256), mode='linear')
-    return c
+def extract_hubert_feature(hubert, wave):
+    length = wave.shape[1] // 320
+    feature = hubert(wave, output_hidden_states=True).hidden_states[6]
+    feature = feature.transpose(1, 2)
+    feature = F.interpolate(feature, length)
+    return feature

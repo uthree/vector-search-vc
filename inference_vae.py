@@ -7,7 +7,7 @@ from torchaudio.functional import resample as resample
 
 from model import VoiceConvertor
 from module.f0 import compute_f0
-from module.hubert import load_hubert, interpolate_hubert_output
+from module.hubert import load_hubert, extract_hubert_feature
 
 parser = argparse.ArgumentParser(description="Inference")
 
@@ -39,14 +39,12 @@ for i, fname in enumerate(os.listdir(args.input)):
         wf = wf.to(device)
         
         f0 = compute_f0(wf) * args.f0_rate
-        hubert_feature = interpolate_hubert_output(hubert(wf), wf.shape[1])
-        z = vc.encoder.encode(hubert_feature, f0)
+        hubert_feature = extract_hubert_feature(hubert, wf)
+        z = vc.encoder(hubert_feature, f0)
         wf = vc.decoder(z)
 
         wf = resample(wf, 16000, sr)
         wf = wf.to(torch.device('cpu'))
         out_path = os.path.join(args.output, f"output_{fname}_{i}.wav")
         torchaudio.save(out_path, src=wf, sample_rate=sr)
-
-
 
