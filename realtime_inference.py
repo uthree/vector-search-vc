@@ -9,7 +9,7 @@ import numpy as np
 import pyaudio
 
 from model import VoiceConvertor, match_features
-from module.hubert import load_hubert
+from module.hubert import load_hubert, extract_hubert_feature
 from module.f0 import compute_f0
 
 parser = argparse.ArgumentParser(description="Inference")
@@ -39,10 +39,12 @@ vc.load_state_dict(torch.load('./model.pt', map_location=device))
 
 hubert = load_hubert(device)
 
+print("Loading target...")
 wf, sr = torchaudio.load(args.target)
 wf = wf.to(device)
 wf = resample(wf, sr, 16000)
 # encode speaker
+target_feature = extract_hubert_feature(hubert, wf)
 
 audio = pyaudio.PyAudio()
 stream_input = audio.open(
@@ -87,9 +89,15 @@ while True:
             wf = resample(data, 44100, 16000)
 
             # Convert
+            f0 = compute_f0(wf) * args.f0_rate
+            hubert_feature = extract_hubert_feature(hubert, wf)
+            hubert_feature = match_features(hubert_feature, target_feature)
+            z = vc.encoder(hubert_feature, f0)
+            wf = vc.decoder(z)
 
             data = resample(wf, 16000, 44100)
             data = data.squeeze(0)
+
     data = data.cpu().numpy()
     data = data * 32768 * args.amp
     data = data.astype(np.int16)
