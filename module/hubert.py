@@ -15,5 +15,5 @@ def extract_hubert_feature(hubert, wave):
     length = wave.shape[1] // 320
     feature = hubert(wave, output_hidden_states=True).hidden_states[6]
     feature = feature.transpose(1, 2)
-    feature = F.interpolate(feature, length)
+    feature = F.interpolate(feature, length, mode='linear')
     return feature
