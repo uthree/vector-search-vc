@@ -40,7 +40,7 @@ vc.load_state_dict(torch.load('./model.pt', map_location=device))
 hubert = load_hubert(device)
 
 print("Loading target...")
-wf, sr = torchaudio.load(args.target)
+wf, sr = torchaudio.load(args.target, normalize=True)
 wf = wf.to(device)
 wf = resample(wf, sr, 16000)
 # encode speaker
