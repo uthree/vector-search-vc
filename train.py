@@ -72,9 +72,12 @@ wavlm = load_wavlm(device)
 grad_acc = args.gradient_accumulation
 
 mel_loss = MelSpectrogramLoss().to(device)
+BCE = nn.BCEWithLogitsLoss()
 
 weight_fm = 2.0
 weight_mel = 45.0
+
+OptC.zero_grad()
 
 for epoch in range(args.epoch):
     tqdm.write(f"Epoch #{epoch}")
@@ -98,7 +101,7 @@ for epoch in range(args.epoch):
             loss_adv = 0
             logits = D.logits(wave_out)
             for logit in logits:
-                loss_adv += (logit ** 2).mean()
+                loss_adv += BCE(logit, torch.zeros_like(logit)) / len(logits)
 
             loss_fm = D.feat_loss(wave_out, wave_src)
             loss_mel = mel_loss(wave_out, wave_src)
@@ -118,10 +121,11 @@ for epoch in range(args.epoch):
             loss_d = 0
             logits = D.logits(wave_out)
             for logit in logits:
-                loss_d += ((logit - 1) ** 2).mean()
+                loss_d += BCE(logit, torch.ones_like(logit)) / len(logits)
             logits = D.logits(wave_src)
             for logit in logits:
-                loss_d += ((logit) ** 2).mean()
+                loss_d += BCE(logit, torch.zeros_like(logit)) / len(logits)
+        loss_d = loss_d / 2
         scaler.scale(loss_d).backward()
         scaler.step(OptD)
 
