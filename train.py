@@ -13,7 +13,7 @@ from model import VoiceConvertor
 from module.match_features import match_features
 from module.dataset import WaveFileDirectory
 from module.discriminator import Discriminator, MelSpectrogramLoss
-from module.hubert import load_hubert, extract_hubert_feature
+from module.wavlm import load_wavlm, extract_wavlm_feature
 from module.f0 import compute_f0
 
 parser = argparse.ArgumentParser(description="run training")
@@ -67,7 +67,7 @@ scaler = torch.cuda.amp.GradScaler(enabled=args.fp16)
 OptC = optim.AdamW(vc.parameters(), lr=args.learning_rate, betas=(0.8, 0.99))
 OptD = optim.AdamW(D.parameters(), lr=args.learning_rate, betas=(0.8, 0.99))
 
-hubert = load_hubert(device)
+wavlm = load_wavlm(device)
 
 grad_acc = args.gradient_accumulation
 
@@ -90,8 +90,8 @@ for epoch in range(args.epoch):
         with torch.cuda.amp.autocast(enabled=args.fp16):
             f0 = compute_f0(wave_src)
 
-            src_feature = extract_hubert_feature(hubert, wave_src)
-            ref_feature = extract_hubert_feature(hubert, wave_ref)
+            src_feature = extract_wavlm_feature(wavlm, wave_src)
+            ref_feature = extract_wavlm_feature(wavlm, wave_ref)
 
             feature = match_features(src_feature, ref_feature)
 

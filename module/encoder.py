@@ -4,13 +4,13 @@ import torch.nn.functional as F
 
 
 class Encoder(nn.Module):
-    def __init__(self, hubert_dim=768, hifigan_dim=512):
+    def __init__(self, wavlm_dim=1024, hifigan_dim=512):
         super().__init__()
-        self.proj = nn.Conv1d(hubert_dim, hifigan_dim, 1, 1, 0, bias=False)
+        self.proj = nn.Conv1d(wavlm_dim, hifigan_dim, 1, 1, 0, bias=False)
         self.f0_enc = F0Encoder(hifigan_dim)
 
-    def forward(self, hubert_feature, f0):
-        return self.proj(hubert_feature) + self.f0_enc(f0)
+    def forward(self, wavlm_feature, f0):
+        return self.proj(wavlm_feature) + self.f0_enc(f0)
 
 
 class F0Encoder(nn.Module):
