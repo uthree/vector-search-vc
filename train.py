@@ -23,7 +23,7 @@ parser.add_argument('-d', '--device', default='cpu')
 parser.add_argument('-e', '--epoch', default=1000, type=int)
 parser.add_argument('-b', '--batch-size', default=1, type=int)
 parser.add_argument('-lr', '--learning-rate', default=1e-4, type=float)
-parser.add_argument('-len', '--length', default=163840, type=int)
+parser.add_argument('-len', '--length', default=40960, type=int)
 parser.add_argument('-m', '--max-data', default=-1, type=int)
 parser.add_argument('-fp16', default=False, type=bool)
 parser.add_argument('-gacc', '--gradient-accumulation', default=1, type=int)
@@ -84,16 +84,12 @@ for epoch in range(args.epoch):
     for batch, wave in enumerate(dl):
         wave = wave.to(device)
         N = wave.shape[0]
-        wave_src, wave_ref = torch.split(wave, [40960, 122880], dim=1)
         
         # Train Convertor.
         with torch.cuda.amp.autocast(enabled=args.fp16):
-            f0 = compute_f0(wave_src)
+            f0 = compute_f0(wave)
 
-            src_feature = extract_wavlm_feature(wavlm, wave_src)
-            ref_feature = extract_wavlm_feature(wavlm, wave_ref)
-
-            feature = match_features(src_feature, ref_feature)
+            feature = extract_wavlm_feature(wavlm, wave)
 
             z = vc.encoder(feature, f0)
             wave_out = vc.decoder(z)
@@ -102,8 +98,8 @@ for epoch in range(args.epoch):
             for logit in logits:
                 loss_adv += (logit ** 2).mean() / len(logits)
 
-            loss_fm = D.feat_loss(wave_out, wave_src)
-            loss_mel = mel_loss(wave_out, wave_src)
+            loss_fm = D.feat_loss(wave_out, wave)
+            loss_mel = mel_loss(wave_out, wave)
 
             loss_c = loss_adv + weight_fm * loss_fm + weight_mel * loss_mel
 
@@ -121,7 +117,7 @@ for epoch in range(args.epoch):
             logits = D.logits(wave_out)
             for logit in logits:
                 loss_d += ((logit - 1) ** 2).mean() / len(logits)
-            logits = D.logits(wave_src)
+            logits = D.logits(wave)
             for logit in logits:
                 loss_d += (logit ** 2).mean() / len(logits)
         loss_d = loss_d / 2
