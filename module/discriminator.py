@@ -55,16 +55,13 @@ class PeriodicDiscriminator(nn.Module):
         x = x.unsqueeze(1)
         x = x.transpose(2, 3)
         x = self.input_layer(x)
-        logits = []
         for layer in self.layers:
             x = layer(x)
-            logits.append(x[:, 0])
         x = self.final_conv(x)
         x = self.final_relu(x)
         if logit:
             x = self.output_layer(x)
-        logits.append(x)
-        return logits
+        return [x]
 
     def feat(self, x):
         # padding

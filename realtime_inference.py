@@ -72,6 +72,7 @@ print("Converting Voice...")
 buffer = []
 chunk = args.chunk
 buffer_size = args.buffer
+
 while True:
     data = stream_input.read(chunk, exception_on_overflow=False)
     data = np.frombuffer(data, dtype=np.int16)
