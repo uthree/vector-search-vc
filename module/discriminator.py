@@ -55,12 +55,16 @@ class PeriodicDiscriminator(nn.Module):
         x = x.unsqueeze(1)
         x = x.transpose(2, 3)
         x = self.input_layer(x)
-        x = self.layers(x)
+        logits = []
+        for layer in self.layers:
+            x = layer(x)
+            logits.append(x[:, 0])
         x = self.final_conv(x)
         x = self.final_relu(x)
         if logit:
             x = self.output_layer(x)
-        return x
+        logits.append(x)
+        return logits
 
     def feat(self, x):
         # padding
@@ -103,7 +107,7 @@ class MultiPeriodicDiscriminator(nn.Module):
     def forward(self, x):
         logits = []
         for sd in self.sub_discriminators:
-            logits.append(sd(x))
+            logits = logits + sd(x)
         return logits
     
     def feat(self, x):
@@ -157,10 +161,12 @@ class ScaleDiscriminator(nn.Module):
         x = x.view(x.shape[0], self.segment_size, -1)
         x = self.pool(x)
         x = self.input_layer(x)
-        x = self.layers(x)
-        if logit:
-            x = self.output_layer(x)
-        return x
+        logits = []
+        for layer in self.layers:
+            x = layer(x)
+            logits.append(x[:, 0])
+        logits.append(self.output_layer(x))
+        return logits
 
     def feat(self, x):
         # Padding
@@ -200,7 +206,7 @@ class MultiScaleDiscriminator(nn.Module):
     def forward(self, x):
         logits = []
         for sd in self.sub_discriminators:
-            logits.append(sd(x))
+            logits = logits + sd(x)
         return logits
 
     def feat(self, x):
