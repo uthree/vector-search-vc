@@ -82,8 +82,6 @@ for epoch in range(args.epoch):
     for batch, wave in enumerate(dl):
         wave = wave.to(device)
         N = wave.shape[0]
-        amp = torch.rand(N, 1, device=device) * 0.75 + 0.25
-        wave = wave * amp
         wave_src, wave_ref = torch.split(wave, [40960, 122880], dim=1)
         
         # Train Convertor.
