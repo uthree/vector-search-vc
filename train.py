@@ -84,7 +84,7 @@ for epoch in range(args.epoch):
         N = wave.shape[0]
         amp = torch.rand(N, 1, device=device) * 0.75 + 0.25
         wave = wave * amp
-        wave_src, wave_ref = wave.chunk(2, dim=1)
+        wave_src, wave_ref = torch.split(wave, [40960, 122880], dim=1)
         
         # Train Convertor.
         with torch.cuda.amp.autocast(enabled=args.fp16):

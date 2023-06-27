@@ -3,8 +3,8 @@ import torch.nn.functional as F
 from transformers import WavLMModel
 
 def load_wavlm(device=torch.device('cpu')):
-    print("Loading HuBERT...")
-    model = WavLMModel.from_pretrained("microsoft/wavlm-large").to(device)
+    print("Loading WavLM...")
+    model = WavLMModel.from_pretrained("microsoft/wavlm-base").to(device)
     model.eval()
     for param in model.parameters():
         param.requires_grad = False
