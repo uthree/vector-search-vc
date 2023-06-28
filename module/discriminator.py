@@ -14,7 +14,7 @@ class PeriodicDiscriminator(nn.Module):
                  kernel_size=5,
                  stride=3,
                  num_stages=4,
-                 dropout_rate=0.2,
+                 dropout_rate=0.0,
                  groups = []
                  ):
         super().__init__()
@@ -122,7 +122,7 @@ class ScaleDiscriminator(nn.Module):
             norm_type='spectral',
             kernel_size=11,
             strides=[1, 1, 1],
-            dropout_rate=0.1,
+            dropout_rate=0.0,
             groups=[],
             pool = 1
             ):
@@ -188,7 +188,7 @@ class MultiScaleDiscriminator(nn.Module):
             kernel_sizes=[15, 41, 41, 41, 41],
             strides=[1, 2, 4, 4, 4, 4],
             groups=[1, 2, 4, 8, 8],
-            pools=[1, 2, 4]
+            pools=[1, 2, 2]
             ):
         super().__init__()
         self.sub_discriminators = nn.ModuleList([])

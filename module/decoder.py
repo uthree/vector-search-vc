@@ -36,7 +36,7 @@ class ResBlock(nn.Module):
     def forward(self, x):
         for c1, c2 in zip(self.convs1, self.convs2):
             xt = F.leaky_relu(x, LRELU_SLOPE)
-            xt = c1(x)
+            xt = c1(xt)
             xt = F.leaky_relu(xt, LRELU_SLOPE)
             xt = c2(x)
             x = xt + x
@@ -60,10 +60,10 @@ class MRF(nn.Module):
                     ResBlock(channels, k, d))
 
     def forward(self, x):
+        out = 0
         for block in self.blocks:
-            xt = block(x)
-            x = xt + x
-        return x
+            out += block(x)
+        return out
 
     def remove_weight_norm(self):
         for block in self.blocks:
