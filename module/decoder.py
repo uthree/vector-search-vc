@@ -38,7 +38,7 @@ class ResBlock(nn.Module):
             xt = F.leaky_relu(x, LRELU_SLOPE)
             xt = c1(xt)
             xt = F.leaky_relu(xt, LRELU_SLOPE)
-            xt = c2(x)
+            xt = c2(xt)
             x = xt + x
         return x
 

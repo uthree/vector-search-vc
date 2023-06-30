@@ -161,7 +161,6 @@ class ScaleDiscriminator(nn.Module):
         logits = []
         for layer in self.layers:
             x = layer(x)
-            logits.append(x[:, 0])
         logits.append(self.output_layer(x))
         return logits
 
