@@ -74,7 +74,6 @@ class Decoder(nn.Module):
     def __init__(self,
             input_channels=512,
             upsample_initial_channels=512,
-            speaker_encoding_channels=128,
             deconv_strides=[10, 8, 2, 2],
             deconv_kernel_sizes=[20, 16, 4, 4],
             resblock_kernel_sizes=[3, 7, 11],
