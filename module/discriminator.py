@@ -15,11 +15,11 @@ class PeriodicDiscriminator(nn.Module):
         self.period = period
         norm_f = weight_norm if use_spectral_norm == False else spectral_norm
         self.layers = nn.ModuleList([
-            norm_f(Conv2d(1, 32, (kernel_size, 1), (stride, 1))),
-            norm_f(Conv2d(32, 128, (kernel_size, 1), (stride, 1))),
-            norm_f(Conv2d(128, 512, (kernel_size, 1), (stride, 1))),
-            norm_f(Conv2d(512, 1024, (kernel_size, 1), (stride, 1))),
-            norm_f(Conv2d(1024, 1024, (kernel_size, 1), 1)),
+            norm_f(Conv2d(1, 32, (kernel_size, 1), (stride, 1), padding=(2, 0))),
+            norm_f(Conv2d(32, 128, (kernel_size, 1), (stride, 1), padding=(2, 0))),
+            norm_f(Conv2d(128, 512, (kernel_size, 1), (stride, 1), padding=(2, 0))),
+            norm_f(Conv2d(512, 1024, (kernel_size, 1), (stride, 1), padding=(2, 0))),
+            norm_f(Conv2d(1024, 1024, (kernel_size, 1), 1, padding=(2, 0))),
         ])
         self.output_layer = norm_f(Conv2d(1024, 1, (3, 1), 1))
 
@@ -29,9 +29,9 @@ class PeriodicDiscriminator(nn.Module):
             pad_len = self.period - (x.shape[1] % self.period)
             x = torch.cat([x, torch.zeros(x.shape[0], pad_len, device=x.device)], dim=1)
 
-        x = x.view(x.shape[0], self.period, -1)
         x = x.unsqueeze(1)
-        x = x.transpose(2, 3)
+        n, c, l = x.shape
+        x = x.view(n, c, l // self.period, self.period)
 
         for layer in self.layers:
             x = layer(x)
@@ -46,9 +46,9 @@ class PeriodicDiscriminator(nn.Module):
             pad_len = self.period - (x.shape[1] % self.period)
             x = torch.cat([x, torch.zeros(x.shape[0], pad_len, device=x.device)], dim=1)
 
-        x = x.view(x.shape[0], self.period, -1)
         x = x.unsqueeze(1)
-        x = x.transpose(2, 3)
+        n, c, l = x.shape
+        x = x.view(n, c, l // self.period, self.period)
 
         for layer in self.layers:
             x = layer(x)
@@ -107,7 +107,6 @@ class ScaleDiscriminator(nn.Module):
             x = layer(x)
             x = F.leaky_relu(x, LRELU_SLOPE)
             feats.append(x)
-        x = self.post(x)
         return feats
 
 
@@ -158,7 +157,7 @@ class Discriminator(nn.Module):
 
 
 class MelSpectrogramLoss(nn.Module):
-    def __init__(self, sample_rate=16000, n_ffts=[1024], n_mels=80, normalized=False):
+    def __init__(self, sample_rate=16000, n_ffts=[512, 1024, 2048], n_mels=80, normalized=False):
         super().__init__()
         self.to_mels = nn.ModuleList([])
         for n_fft in n_ffts:

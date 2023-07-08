@@ -14,7 +14,7 @@ def compute_f0(wf, sample_rate=16000, segment_size=320, f0_min=20, f0_max=1100):
         f0 = torch.from_numpy(f0).to(torch.float)
         f0 = f0.to(device)
         f0 = f0.unsqueeze(0).unsqueeze(0)
-        f0 = F.interpolate(f0, wf.shape[0] // segment_size)
+        f0 = F.interpolate(f0, wf.shape[0] // segment_size, mode='linear')
         f0 = f0.squeeze(0)
         return f0
     elif wf.ndim == 2:

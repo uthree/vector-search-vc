@@ -21,9 +21,9 @@ parser = argparse.ArgumentParser(description="run training")
 parser.add_argument('dataset')
 parser.add_argument('-d', '--device', default='cpu')
 parser.add_argument('-e', '--epoch', default=1000, type=int)
-parser.add_argument('-b', '--batch-size', default=1, type=int)
-parser.add_argument('-lr', '--learning-rate', default=1e-4, type=float)
-parser.add_argument('-len', '--length', default=40960, type=int)
+parser.add_argument('-b', '--batch-size', default=8, type=int)
+parser.add_argument('-lr', '--learning-rate', default=2e-4, type=float)
+parser.add_argument('-len', '--length', default=7040, type=int)
 parser.add_argument('-m', '--max-data', default=-1, type=int)
 parser.add_argument('-fp16', default=False, type=bool)
 parser.add_argument('-gacc', '--gradient-accumulation', default=1, type=int)
@@ -133,6 +133,7 @@ for epoch in range(args.epoch):
 
         if batch % 200 == 0:
             save_models(vc, D)
+
 
 print("Training Complete!")
 save_models(vc, D)

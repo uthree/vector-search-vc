@@ -106,7 +106,7 @@ class Decoder(nn.Module):
             x = F.leaky_relu(x, LRELU_SLOPE)
             x = up(x)
             x = MRF(x) / self.num_kernels
-        x = F.leaky_relu(x)
+        x = F.leaky_relu(x, LRELU_SLOPE)
         x = self.post(x)
         x = torch.tanh(x)
         x = x.squeeze(1)
