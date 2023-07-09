@@ -64,8 +64,10 @@ dl = torch.utils.data.DataLoader(ds, batch_size=args.batch_size, shuffle=True)
 
 scaler = torch.cuda.amp.GradScaler(enabled=args.fp16)
 
-OptC = optim.AdamW(vc.parameters(), lr=args.learning_rate, betas=(0.8, 0.99))
-OptD = optim.AdamW(D.parameters(), lr=args.learning_rate, betas=(0.8, 0.99))
+OptC = optim.AdamW(vc.parameters(), lr=args.learning_rate, betas=(0.8, 0.99), weight_decay=0.01)
+OptD = optim.AdamW(D.parameters(), lr=args.learning_rate, betas=(0.8, 0.99), weight_decay=0.01)
+
+scheduler = optim.lr_scheduler.StepLR(OptC, 1, gamma=0.999)
 
 wavlm = load_wavlm(device)
 
@@ -133,6 +135,8 @@ for epoch in range(args.epoch):
 
         if batch % 200 == 0:
             save_models(vc, D)
+
+    scheduler.step()
 
 
 print("Training Complete!")
