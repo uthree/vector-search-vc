@@ -5,15 +5,8 @@ from torch.nn.utils import weight_norm, remove_weight_norm
 
 LRELU_SLOPE = 0.1
 
-
-def init_weights(m, mean=0.0, std=0.01):
-    classname = m.__class__.__name__
-    if classname.find("Conv") != -1:
-        m.weight.data.normal_(mean, std)
-
-
 def get_padding(kernel_size, dilation=1):
-    return int(((kernel_size -1)*dilation)/2)
+    return int(((kernel_size - 1) * dilation) / 2)
 
 
 class ResBlock(nn.Module):
@@ -29,9 +22,6 @@ class ResBlock(nn.Module):
             self.convs2.append(
                     weight_norm(nn.Conv1d(channels, channels, kernel_size, 1, dilation=d,
                         padding=get_padding(kernel_size, d))))
-
-        self.convs1.apply(init_weights)
-        self.convs2.apply(init_weights)
 
     def forward(self, x):
         for c1, c2 in zip(self.convs1, self.convs2):
@@ -98,7 +88,6 @@ class Decoder(nn.Module):
             self.MRFs.append(MRF(c, resblock_kernel_sizes, resblock_dilation_rates))
         
         self.post = weight_norm(nn.Conv1d(c, 1, 7, 1, 3, bias=False))
-        self.ups.apply(init_weights)
     
     def forward(self, x):
         x = self.pre(x)

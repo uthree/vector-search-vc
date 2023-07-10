@@ -157,7 +157,7 @@ class Discriminator(nn.Module):
 
 
 class MelSpectrogramLoss(nn.Module):
-    def __init__(self, sample_rate=16000, n_ffts=[512, 1024, 2048], n_mels=80, normalized=False):
+    def __init__(self, sample_rate=16000, n_ffts=[512, 1024, 2048], n_mels=80, normalized=False, log=False):
         super().__init__()
         self.to_mels = nn.ModuleList([])
         for n_fft in n_ffts:
@@ -166,6 +166,7 @@ class MelSpectrogramLoss(nn.Module):
                                                                 n_fft=n_fft,
                                                                 normalized=normalized,
                                                                 hop_length=256))
+        self.log = log
 
     def forward(self, fake, real):
         loss = 0
@@ -173,5 +174,10 @@ class MelSpectrogramLoss(nn.Module):
             to_mel = to_mel.to(real.device)
             with torch.no_grad():
                 real_mel = to_mel(real)
-            loss += F.l1_loss(to_mel(fake), real_mel).mean() / len(self.to_mels)
+                if self.log:
+                    real_mel = torch.log(real_mel)
+            fake_mel = to_mel(fake)
+            if self.log:
+                fake_mel = torch.log(fake_mel)
+            loss += F.l1_loss(fake_mel, real_mel).mean() / len(self.to_mels)
         return loss
